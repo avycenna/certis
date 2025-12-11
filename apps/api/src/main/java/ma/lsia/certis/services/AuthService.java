@@ -1,0 +1,55 @@
+package ma.lsia.certis.services;
+
+import org.springframework.lang.NonNull;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
+import ma.lsia.certis.dto.AuthResponse;
+import ma.lsia.certis.dto.LoginRequest;
+import ma.lsia.certis.dto.UserResponse;
+import ma.lsia.certis.entities.User;
+import ma.lsia.certis.security.JwtUtil;
+
+@Service
+public class AuthService {
+  private final UserService userService;
+  private final PasswordEncoder passwordEncoder;
+  private final JwtUtil jwtUtil;
+  
+  public AuthService(UserService userService, PasswordEncoder passwordEncoder, JwtUtil jwtUtil) {
+    this.userService = userService;
+    this.passwordEncoder = passwordEncoder;
+    this.jwtUtil = jwtUtil;
+  }
+
+  public AuthResponse login(@NonNull LoginRequest request) {
+    String email = request.getEmail();
+    String password = request.getPassword();
+    
+    if (email == null || password == null) {
+      throw new BadCredentialsException("Email and password are required");
+    }
+    
+    User user = userService.getUserByEmail(email)
+        .orElseThrow(() -> new BadCredentialsException("Invalid email or password"));
+
+    if (!passwordEncoder.matches(password, user.getPassword())) {
+      throw new BadCredentialsException("Invalid email or password");
+    }
+
+    Long userId = user.getId();
+    if (userId == null) {
+      throw new IllegalStateException("User ID cannot be null");
+    }
+
+    // Update last login
+    userService.updateLastLogin(userId);
+
+    // Generate JWT token
+    String token = jwtUtil.generateToken(user.getEmail(), userId);
+
+    // Return response with token and user info
+    return new AuthResponse(token, UserResponse.fromUser(user));
+  }
+}
