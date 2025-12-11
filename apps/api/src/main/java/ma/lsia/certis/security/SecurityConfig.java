@@ -34,8 +34,10 @@ public class SecurityConfig {
         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // Use stateless sessions (JWT)
       .authorizeHttpRequests(auth -> auth
         // Public endpoints (no authentication required)
-        .requestMatchers("/**").permitAll() // All endpoints (dev only)
-                
+        .requestMatchers("/auth/register", "/auth/login").permitAll()
+        .requestMatchers("/h2-console/**").permitAll() // H2 Console (dev only)
+        .requestMatchers("/docs/**", "/docs/api/**").permitAll() // Swagger
+        
         // Protected endpoints (authentication required)
         // For owner-only access, use SecurityUtil in your service/controller
         .anyRequest().authenticated()
