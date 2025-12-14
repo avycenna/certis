@@ -52,4 +52,28 @@ public class AuthService {
     // Return response with token and user info
     return new AuthResponse(token, UserResponse.fromUser(user));
   }
+
+  public AuthResponse refreshToken(@NonNull String oldToken) {
+    try {
+      // Extract user information from the old token
+      String email = jwtUtil.extractEmail(oldToken);
+      Long userId = jwtUtil.extractUserId(oldToken);
+      
+      if (email == null || userId == null) {
+        throw new BadCredentialsException("Invalid token");
+      }
+      
+      // Verify user still exists
+      User user = userService.getUserByEmail(email)
+          .orElseThrow(() -> new BadCredentialsException("User not found"));
+      
+      // Generate new JWT token with fresh expiration
+      String newToken = jwtUtil.generateToken(user.getEmail(), userId);
+      
+      // Return response with new token and user info
+      return new AuthResponse(newToken, UserResponse.fromUser(user));
+    } catch (Exception e) {
+      throw new BadCredentialsException("Invalid or expired token");
+    }
+  }
 }

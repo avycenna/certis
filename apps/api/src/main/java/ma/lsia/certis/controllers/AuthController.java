@@ -58,4 +58,16 @@ public class AuthController {
     AuthResponse response = authService.login(request);
     return ResponseEntity.ok(response);
   }
+
+  @Operation(summary = "Refresh token", description = "Refresh an expired JWT token to get a new one")
+  @ApiResponses(value = {
+    @ApiResponse(responseCode = "200", description = "Token refreshed successfully",
+      content = @Content(schema = @Schema(implementation = AuthResponse.class))),
+    @ApiResponse(responseCode = "401", description = "Invalid or expired token")
+  })
+  @PostMapping("/refresh")
+  public ResponseEntity<AuthResponse> refreshToken(@Valid @NonNull @RequestBody String oldToken) {
+    AuthResponse response = authService.refreshToken(oldToken);
+    return ResponseEntity.ok(response);
+  }
 }
