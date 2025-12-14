@@ -29,6 +29,9 @@ public class UserService {
       throw new IllegalArgumentException("Email already registered");
     }
 
+    // Additional password validation (belt-and-suspenders approach)
+    validatePassword(request.getPassword());
+
     User user = new User();
     user.setFirstName(request.getFirstName());
     user.setLastName(request.getLastName());
@@ -36,6 +39,28 @@ public class UserService {
     user.setPassword(passwordEncoder.encode(request.getPassword()));
     
     return userRepo.save(user);
+  }
+
+  private void validatePassword(String password) {
+    if (password == null || password.length() < 8) {
+      throw new IllegalArgumentException("Password must be at least 8 characters long");
+    }
+    
+    if (!password.matches(".*[A-Z].*")) {
+      throw new IllegalArgumentException("Password must contain at least one uppercase letter");
+    }
+    
+    if (!password.matches(".*[a-z].*")) {
+      throw new IllegalArgumentException("Password must contain at least one lowercase letter");
+    }
+    
+    if (!password.matches(".*\\d.*")) {
+      throw new IllegalArgumentException("Password must contain at least one number");
+    }
+    
+    if (!password.matches(".*[@$!%*?&].*")) {
+      throw new IllegalArgumentException("Password must contain at least one special character (@$!%*?&)");
+    }
   }
 
   @Transactional(readOnly = true)
