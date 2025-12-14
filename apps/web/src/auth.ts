@@ -106,6 +106,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       return refreshAccessToken(token)
     },
     async session({ session, token }) {
+      // Check for refresh errors - force sign out
+      if (token.error === "RefreshAccessTokenError") {
+        // Return null session to force sign out
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return null as any
+      }
+
       // Send properties to the client
       if (token) {
         session.user.id = token.id as string

@@ -7,6 +7,7 @@ export class ApiError extends Error {
   constructor(
     message: string,
     public status: number,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     public data?: any
   ) {
     super(message)
@@ -15,32 +16,8 @@ export class ApiError extends Error {
 }
 
 /**
- * Refresh the access token
- */
-async function refreshToken(oldToken: string): Promise<string | null> {
-  try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/refresh`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(oldToken),
-    })
-
-    if (!response.ok) {
-      return null
-    }
-
-    const data = await response.json()
-    return data.token
-  } catch {
-    return null
-  }
-}
-
-/**
  * Fetches data from the Spring Boot API with authentication
- * Automatically handles 401 errors by attempting token refresh
+ * Handles 401 errors by signing out the user (token refresh is handled by NextAuth JWT callback)
  * @param endpoint - API endpoint (e.g., "/users/me")
  * @param accessToken - JWT token from session
  * @param options - Fetch options
@@ -58,32 +35,16 @@ export async function apiClient<T>(
     ...options?.headers,
   }
 
-  let response = await fetch(url, {
+  const response = await fetch(url, {
     ...options,
     headers,
   })
 
-  // Handle 401 Unauthorized - attempt token refresh and retry
+  // Handle 401 Unauthorized - token expired and NextAuth couldn't refresh
   if (response.status === 401 && accessToken) {
-    const newToken = await refreshToken(accessToken)
-    
-    if (newToken) {
-      // Retry request with new token
-      const newHeaders: HeadersInit = {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${newToken}`,
-        ...options?.headers,
-      }
-      
-      response = await fetch(url, {
-        ...options,
-        headers: newHeaders,
-      })
-    } else {
-      // Refresh failed, sign out user
-      await signOut({ redirectTo: "/login" })
-      throw new ApiError("Session expired. Please sign in again.", 401)
-    }
+    // Sign out user and redirect to login
+    await signOut({ redirectTo: "/login" })
+    throw new ApiError("Session expired. Please sign in again.", 401)
   }
 
   if (!response.ok) {
