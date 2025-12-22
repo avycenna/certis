@@ -3,12 +3,14 @@ package ma.lsia.certis.security;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import ma.lsia.certis.enums.Role;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
+import java.util.UUID;
 import java.util.function.Function;
 
 @Component
@@ -17,17 +19,18 @@ public class JwtUtil {
   @Value("${jwt.secret}")
   private String secret;
 
-  @Value("${jwt.expirationMs}") // Default: 24 hours in milliseconds
+  @Value("${jwt.expiration-ms}") // Default: 24 hours in milliseconds
   private Long expiration;
 
   private SecretKey getSigningKey() {
     return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
   }
 
-  public String generateToken(String email, Long userId) {
+  public String generateToken(String email, UUID userId, Role role) {
     return Jwts.builder()
         .subject(email)
         .claim("userId", userId)
+        .claim("role", role.name())
         .issuedAt(new Date())
         .expiration(new Date(System.currentTimeMillis() + expiration))
         .signWith(getSigningKey())
@@ -38,8 +41,13 @@ public class JwtUtil {
     return extractClaim(token, Claims::getSubject);
   }
 
-  public Long extractUserId(String token) {
-    return extractClaim(token, claims -> claims.get("userId", Long.class));
+  public UUID extractUserId(String token) {
+    return extractClaim(token, claims -> claims.get("userId", UUID.class));
+  }
+
+  public Role extractRole(String token) {
+    String roleName = extractClaim(token, claims -> claims.get("role", String.class));
+    return roleName != null ? Role.valueOf(roleName) : Role.USER;
   }
 
   public Date extractExpiration(String token) {

@@ -1,5 +1,7 @@
 package ma.lsia.certis.controllers;
 
+import java.util.UUID;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.lang.NonNull;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -39,6 +41,7 @@ public class UserController {
 
   /**
    * Get current user profile
+   * @return ResponseEntity<UserResponse>
    */
   @Operation(summary = "Get current user profile", description = "Retrieve the authenticated user's profile information")
   @ApiResponses(value = {
@@ -59,7 +62,9 @@ public class UserController {
   }
 
   /**
-   * Get user by ID (owner-only)
+   * Get user by ID (owner-only access)
+   * @param UUID id
+   * @return ResponseEntity<UserResponse>
    */
   @Operation(summary = "Get user by ID", description = "Retrieve user profile by ID (owner-only access)")
   @ApiResponses(value = {
@@ -69,7 +74,7 @@ public class UserController {
     @ApiResponse(responseCode = "404", description = "User not found")
   })
   @GetMapping("/{id}")
-  public ResponseEntity<UserResponse> getUserById(@PathVariable @NonNull Long id) {
+  public ResponseEntity<UserResponse> getUserById(@PathVariable @NonNull UUID id) {
     String currentUserEmail = SecurityUtil.getCurrentUserEmail();
     if (currentUserEmail == null) {
       throw new UnauthorizedException("User not authenticated");
@@ -88,6 +93,8 @@ public class UserController {
 
   /**
    * Update current user profile
+   * @param UpdateUserRequest request
+   * @return ResponseEntity<UserResponse>
    */
   @Operation(summary = "Update user profile", description = "Update the authenticated user's profile information")
   @ApiResponses(value = {
@@ -124,6 +131,7 @@ public class UserController {
 
   /**
    * Delete current user account
+   * @return ResponseEntity<Void>
    */
   @Operation(summary = "Delete user account", description = "Permanently delete the authenticated user's account")
   @ApiResponses(value = {
@@ -140,7 +148,7 @@ public class UserController {
     User user = userService.getUserByEmail(userEmail)
         .orElseThrow(() -> new UnauthorizedException("User not found"));
 
-    Long userId = user.getId();
+    UUID userId = user.getId();
     if (userId == null) {
       throw new UnauthorizedException("User ID not found");
     }

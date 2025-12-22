@@ -5,8 +5,29 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
+import ma.lsia.certis.entities.User;
+
 @Component
 public class SecurityUtil {
+
+  /**
+   * Get the currently authenticated user
+   * @return User of authenticated user, or null if not authenticated
+   */
+  public static User getCurrentUser() {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    
+    if (authentication == null || !authentication.isAuthenticated()) {
+      return null;
+    }
+
+    Object principal = authentication.getPrincipal();
+    if (principal instanceof User) {
+      return (User) principal;
+    }
+    
+    return null;
+  }
 
   /**
    * Get the email of the currently authenticated user

@@ -5,8 +5,8 @@
   "scripts": {
     "dev:web": "pnpm --filter web dev",
     "build:web": "pnpm --filter web build",
-    "dev:api": "cd .\\apps\\api && .\\mvnw spring-boot:run",
-    "build:api": "cd .\\apps\\api && .\\mvnw package",
+    "dev:api": "cd .\\apps\\api && mvn spring-boot:run",
+    "build:api": "cd .\\apps\\api && mvn package",
     "dev": "concurrently -n web,api -c blue,green \"pnpm dev:web\" \"pnpm dev:api\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },

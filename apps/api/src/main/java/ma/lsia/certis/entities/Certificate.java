@@ -1,15 +1,12 @@
 package ma.lsia.certis.entities;
 
 import java.time.LocalDateTime;
-import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.format.annotation.DateTimeFormat;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.EnumType;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -17,82 +14,74 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import jakarta.validation.constraints.Email;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import ma.lsia.certis.enums.Role;
 
 @Entity
 @Table(
-  name = "users",
+  name = "certificates",
   indexes = {
-    @Index(name = "idx_user_email", columnList = "email")
+    @Index(name = "idx_cert_serial_number", columnList = "serialNumber")
   }
 )
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class User {
+public class Certificate {
   @Id
-  @GeneratedValue(strategy = GenerationType.UUID)
+  @GeneratedValue(strategy = GenerationType.AUTO)
   private UUID id;
 
   @NotBlank
-  @Size(min = 3, max = 50)
-  private String firstName;
-  
-  @NotBlank
-  @Size(min = 3, max = 50)
-  private String lastName;
-  
-  @NotBlank
-  @Email
   @Column(unique = true)
-  private String email;
+  private String serialNumber;
 
-  @NotBlank
-  @Size(min = 6, max = 255)
-  @JsonIgnore
-  private String password;
+  private Boolean isRevoked = false;
 
-  @Enumerated(EnumType.STRING)
-  @Column(nullable = false)
-  private Role role = Role.USER;
-
-  @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-  private LocalDateTime isVerified;
+  @Size(min = 1, max = 2048)
+  private String revocationReason;
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "organization_id")
+  @NotNull
   private Organization organization;
+  
+  @ManyToOne(fetch = FetchType.LAZY)
+  @NotNull
+  private User issuer;
 
-  @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-  private LocalDateTime joinedAt;
+  @NotBlank
+  @Size(min = 3, max = 100)
+  private String subject;
 
-  @OneToMany(mappedBy = "issuer", fetch = FetchType.LAZY)
-  private Set<Certificate> issuedCertificates;
+  @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+  private LocalDateTime activeFrom;
 
-  @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+  @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+  private LocalDateTime activeTo;
+
+  @Column(columnDefinition = "TEXT") // Switch to JSON in production
+  private String metadata;
+
+  @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
   @Column(updatable = false)
   private LocalDateTime createdAt;
-
-  @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+  
+  @ManyToOne
+  @JoinColumn(updatable = false)
+  private User createdBy;
+  
+  @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
   private LocalDateTime updatedAt;
-
-  @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-  private LocalDateTime lastLogin;
 
   @PrePersist
   protected void onCreate() {
@@ -108,9 +97,9 @@ public class User {
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
-    if (!(o instanceof User)) return false;
-    User user = (User) o;
-    return id != null && id.equals(user.id);
+    if (!(o instanceof Certificate)) return false;
+    Certificate that = (Certificate) o;
+    return id != null && id.equals(that.id);
   }
 
   @Override
@@ -120,15 +109,15 @@ public class User {
 
   @Override
   public String toString() {
-    return "User{" +
+    return "Certificate{" +
       "id=" + id +
-      ", firstName='" + firstName + '\'' +
-      ", lastName='" + lastName + '\'' +
-      ", email='" + email + '\'' +
-      ", isVerified=" + isVerified +
+      ", serialNumber='" + serialNumber + '\'' +
+      ", isRevoked=" + isRevoked +
+      ", subject='" + subject + '\'' +
+      ", activeFrom=" + activeFrom +
+      ", activeTo=" + activeTo +
       ", createdAt=" + createdAt +
       ", updatedAt=" + updatedAt +
-      ", lastLogin=" + lastLogin +
       '}';
   }
 }

@@ -35,6 +35,11 @@ public class AuthController {
     this.authService = authService;
   }
 
+  /**
+   * Register a new user
+   * @param RegisterRequest request
+   * @return ResponseEntity<UserResponse>
+   */
   @Operation(summary = "Register a new user", description = "Create a new user account with email and password")
   @ApiResponses(value = {
     @ApiResponse(responseCode = "201", description = "User created successfully",
@@ -47,6 +52,11 @@ public class AuthController {
     return ResponseEntity.status(HttpStatus.CREATED).body(UserResponse.fromUser(user));
   }
 
+  /**
+   * Login user and return JWT token
+   * @param LoginRequest request
+   * @return ResponseEntity<AuthResponse>
+   */
   @Operation(summary = "Login", description = "Authenticate user and receive JWT token")
   @ApiResponses(value = {
     @ApiResponse(responseCode = "200", description = "Login successful",
@@ -59,6 +69,11 @@ public class AuthController {
     return ResponseEntity.ok(response);
   }
 
+  /**
+   * Refresh JWT token
+   * @param oldToken the expired JWT token
+   * @return ResponseEntity<AuthResponse>
+   */
   @Operation(summary = "Refresh token", description = "Refresh an expired JWT token to get a new one")
   @ApiResponses(value = {
     @ApiResponse(responseCode = "200", description = "Token refreshed successfully",

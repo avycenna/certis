@@ -3,6 +3,7 @@ package ma.lsia.certis.security;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -14,6 +15,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
   
   private final JwtFilter jwtAuthenticationFilter;
@@ -39,6 +41,7 @@ public class SecurityConfig {
       .authorizeHttpRequests(auth -> auth
         // Public endpoints (no authentication required)
         .requestMatchers("/auth/register", "/auth/login").permitAll()
+        .requestMatchers("/invitations/accept").permitAll() // Public invitation acceptance
         .requestMatchers("/h2-console/**").permitAll() // H2 Console (dev only)
         .requestMatchers("/docs/**", "/docs/api/**", "/swagger-ui/**", "/v3/api-docs/**").permitAll() // Swagger
         .requestMatchers("/**").permitAll() // dev only

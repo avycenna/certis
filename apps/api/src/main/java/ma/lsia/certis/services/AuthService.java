@@ -1,5 +1,7 @@
 package ma.lsia.certis.services;
 
+import java.util.UUID;
+
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -38,7 +40,7 @@ public class AuthService {
       throw new BadCredentialsException("Invalid email or password");
     }
 
-    Long userId = user.getId();
+    UUID userId = user.getId();
     if (userId == null) {
       throw new IllegalStateException("User ID cannot be null");
     }
@@ -46,8 +48,8 @@ public class AuthService {
     // Update last login
     userService.updateLastLogin(userId);
 
-    // Generate JWT token
-    String token = jwtUtil.generateToken(user.getEmail(), userId);
+    // Generate JWT token with role
+    String token = jwtUtil.generateToken(user.getEmail(), userId, user.getRole());
 
     // Return response with token and user info
     return new AuthResponse(token, UserResponse.fromUser(user));
@@ -57,7 +59,7 @@ public class AuthService {
     try {
       // Extract user information from the old token
       String email = jwtUtil.extractEmail(oldToken);
-      Long userId = jwtUtil.extractUserId(oldToken);
+      UUID userId = jwtUtil.extractUserId(oldToken);
       
       if (email == null || userId == null) {
         throw new BadCredentialsException("Invalid token");
@@ -67,8 +69,8 @@ public class AuthService {
       User user = userService.getUserByEmail(email)
           .orElseThrow(() -> new BadCredentialsException("User not found"));
       
-      // Generate new JWT token with fresh expiration
-      String newToken = jwtUtil.generateToken(user.getEmail(), userId);
+      // Generate new JWT token with fresh expiration and current role
+      String newToken = jwtUtil.generateToken(user.getEmail(), userId, user.getRole());
       
       // Return response with new token and user info
       return new AuthResponse(newToken, UserResponse.fromUser(user));
