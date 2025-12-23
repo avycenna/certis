@@ -72,7 +72,7 @@ public class Organization {
   private Set<User> users;
 
   @OneToMany(mappedBy = "organization", fetch = FetchType.LAZY)
-  private Set<Certificate> issuedCertificates;
+  private Set<Course> courses;
 
   @Lob
   @Size(max = 1048576 * 10) // 10 MB

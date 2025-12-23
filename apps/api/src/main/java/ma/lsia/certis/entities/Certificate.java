@@ -56,6 +56,10 @@ public class Certificate {
   private Organization organization;
   
   @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "course_id")
+  private Course course;
+  
+  @ManyToOne(fetch = FetchType.LAZY)
   @NotNull
   private User issuer;
 
