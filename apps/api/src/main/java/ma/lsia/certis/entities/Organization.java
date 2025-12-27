@@ -32,6 +32,8 @@ import ma.lsia.certis.enums.Role;
 
 import java.util.Comparator;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 @Entity
 @Table(
   name = "organizations",
@@ -43,16 +45,20 @@ import java.util.Comparator;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Schema(description = "Represents an organization in the system")
 public class Organization {
   @Id
   @GeneratedValue(strategy = GenerationType.UUID)
+  @Schema(description = "Unique identifier of the organization", example = "b3b7c8e2-1d2a-4c3e-9f2e-123456789abc")
   private UUID id;
 
   @NotBlank
   @Size(min = 3, max = 50)
+  @Schema(description = "Name of the organization", example = "Certis Academy")
   private String name;
   
   @Size(max = 1024)
+  @Schema(description = "Description of the organization", example = "A platform for managing certificates and courses.")
   private String desc;
 
   @NotBlank
@@ -61,27 +67,34 @@ public class Organization {
     regexp = "^(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,}$",
     message = "Domain must be a valid domain name (e.g., example.com, subdomain.example.com)"
   )
+  @Schema(description = "Domain of the organization", example = "certis.com")
   private String domain;
 
   @NotNull
   @OneToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "owner_user_id", unique = true)
+  @Schema(description = "Owner of the organization")
   private User owner;
 
   @OneToMany(mappedBy = "organization", fetch = FetchType.LAZY)
+  @Schema(description = "Users belonging to the organization")
   private Set<User> users;
 
   @OneToMany(mappedBy = "organization", fetch = FetchType.LAZY)
+  @Schema(description = "Courses offered by the organization")
   private Set<Course> courses;
 
   @Lob
   @Size(max = 1048576 * 10) // 10 MB
+  @Schema(description = "Logo of the organization (binary data)")
   private byte[] logo;
 
   @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+  @Schema(description = "Date the organization was created (ISO 8601 format)", example = "2025-01-01T00:00:00")
   private LocalDateTime createdAt;
 
   @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+  @Schema(description = "Date the organization was last updated (ISO 8601 format)", example = "2025-06-01T12:00:00")
   private LocalDateTime updatedAt;
 
   @PrePersist
@@ -95,6 +108,7 @@ public class Organization {
     this.updatedAt = LocalDateTime.now();
   }
 
+  // TODO: check if these functions should be moved to a repository or service class
   /**
    * Get the owner of the organization (user with OWNER role)
    */

@@ -29,6 +29,8 @@ import lombok.Setter;
 import ma.lsia.certis.enums.InvitationStatus;
 import ma.lsia.certis.enums.Role;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 @Entity
 @Table(
   name = "invitations",
@@ -42,47 +44,57 @@ import ma.lsia.certis.enums.Role;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Schema(description = "Represents an invitation sent to a user to join an organization")
 public class Invitation {
   @Id
   @GeneratedValue(strategy = GenerationType.UUID)
+  @Schema(description = "Unique identifier of the invitation", example = "b3b7c8e2-1d2a-4c3e-9f2e-123456789abc")
   private UUID id;
 
   @NotBlank
   @Column(unique = true, nullable = false)
+  @Schema(description = "Unique token for the invitation", example = "abc123def456")
   private String token;
 
   @NotBlank
   @Email
   @Column(nullable = false)
+  @Schema(description = "Email address of the invitee", example = "invitee@example.com")
   private String email;
 
   @NotNull
   @Enumerated(EnumType.STRING)
   @Column(nullable = false)
+  @Schema(description = "Role assigned to the invitee", example = "USER")
   private Role role;
 
   @NotNull
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "organization_id", nullable = false)
+  @Schema(description = "Organization the invitee is invited to")
   private Organization organization;
 
   @NotNull
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "invited_by_user_id", nullable = false)
+  @Schema(description = "User who sent the invitation")
   private User invitedBy;
 
   @NotNull
   @Enumerated(EnumType.STRING)
   @Column(nullable = false)
+  @Schema(description = "Status of the invitation", example = "PENDING")
   private InvitationStatus status = InvitationStatus.PENDING;
 
   @NotNull
   @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
   @Column(nullable = false)
+  @Schema(description = "Expiration date and time of the invitation (ISO 8601 format)", example = "2025-12-31T23:59:59")
   private LocalDateTime expiresAt;
 
   @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
   @Column(updatable = false, nullable = false)
+  @Schema(description = "Date and time the invitation was created (ISO 8601 format)", example = "2025-01-01T00:00:00")
   private LocalDateTime createdAt;
 
   @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
