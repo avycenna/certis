@@ -6,12 +6,12 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
+import org.springframework.data.rest.core.annotation.RepositoryRestResource;
 
 import ma.lsia.certis.entities.Invitation;
 import ma.lsia.certis.enums.InvitationStatus;
 
-@Repository
+@RepositoryRestResource
 public interface InvitationRepository extends JpaRepository<Invitation, UUID> {
   Optional<Invitation> findByToken(String token);
   

@@ -4,23 +4,21 @@ import java.time.LocalDateTime;
 import java.util.Set;
 import java.util.UUID;
 
-import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.Index;
-import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Lob;
 import jakarta.persistence.OneToMany;
-import jakarta.persistence.OneToOne;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
@@ -32,15 +30,14 @@ import ma.lsia.certis.enums.Role;
 
 import java.util.Comparator;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @Entity
 @Table(
-  name = "organizations",
-  indexes = {
-    @Index(name = "idx_org_owner", columnList = "user_id")
-  }
+  name = "organizations"
 )
+@EntityListeners(AuditingEntityListener.class)
 @Getter
 @Setter
 @NoArgsConstructor
@@ -70,17 +67,13 @@ public class Organization {
   @Schema(description = "Domain of the organization", example = "certis.com")
   private String domain;
 
-  @NotNull
-  @OneToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "owner_user_id", unique = true)
-  @Schema(description = "Owner of the organization")
-  private User owner;
-
   @OneToMany(mappedBy = "organization", fetch = FetchType.LAZY)
+  @JsonIgnore
   @Schema(description = "Users belonging to the organization")
   private Set<User> users;
 
   @OneToMany(mappedBy = "organization", fetch = FetchType.LAZY)
+  @JsonIgnore
   @Schema(description = "Courses offered by the organization")
   private Set<Course> courses;
 
@@ -89,41 +82,29 @@ public class Organization {
   @Schema(description = "Logo of the organization (binary data)")
   private byte[] logo;
 
-  @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+  @CreatedDate
   @Schema(description = "Date the organization was created (ISO 8601 format)", example = "2025-01-01T00:00:00")
   private LocalDateTime createdAt;
 
-  @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+  @LastModifiedDate
   @Schema(description = "Date the organization was last updated (ISO 8601 format)", example = "2025-06-01T12:00:00")
   private LocalDateTime updatedAt;
 
-  @PrePersist
-  protected void onCreate() {
-    this.createdAt = LocalDateTime.now();
-    this.updatedAt = LocalDateTime.now();
-  }
+  @Version
+  @Schema(description = "Version number for optimistic locking")
+  private Long version;
 
-  @PreUpdate
-  protected void onUpdate() {
-    this.updatedAt = LocalDateTime.now();
-  }
-
-  // TODO: check if these functions should be moved to a repository or service class
   /**
    * Get the owner of the organization (user with OWNER role)
    */
   public User getOwner() {
-    if (owner != null) {
-      return owner;
+    if (users == null) {
+      return null;
     }
-    // Fallback: find user with OWNER role in users collection
-    if (users != null) {
-      return users.stream()
-          .filter(user -> user.getRole() == Role.OWNER)
-          .findFirst()
-          .orElse(null);
-    }
-    return null;
+    return users.stream()
+        .filter(user -> user.getRole() == Role.OWNER)
+        .findFirst()
+        .orElse(null);
   }
 
   /**

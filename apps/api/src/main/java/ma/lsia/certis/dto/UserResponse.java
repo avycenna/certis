@@ -37,7 +37,7 @@ public class UserResponse {
   private UUID organizationId;
 
   @Schema(description = "Date and time when the user was verified (ISO 8601 format)", example = "2025-01-01T00:00:00")
-  private LocalDateTime isVerified;
+  private LocalDateTime verifiedAt;
 
   @Schema(description = "Date and time when the user joined (ISO 8601 format)", example = "2025-01-01T00:00:00")
   private LocalDateTime joinedAt;
@@ -56,7 +56,7 @@ public class UserResponse {
       user.getEmail(),
       user.getRole(),
       user.getOrganization() != null ? user.getOrganization().getId() : null,
-      user.getIsVerified(),
+      user.getVerifiedAt(),
       user.getJoinedAt(),
       user.getCreatedAt(),
       user.getLastLogin()

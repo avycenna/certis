@@ -13,6 +13,7 @@ import ma.lsia.certis.dto.RegisterRequest;
 import ma.lsia.certis.entities.User;
 import ma.lsia.certis.enums.Role;
 import ma.lsia.certis.repos.UserRepository;
+import ma.lsia.certis.util.PasswordValidator;
 import ma.lsia.certis.util.SecurityUtil;
 
 @Service
@@ -32,39 +33,18 @@ public class UserService {
       throw new IllegalArgumentException("Email already registered");
     }
 
-    // Additional password validation (belt-and-suspenders approach)
-    validatePassword(request.getPassword());
+    // Validate password strength before creating user
+    PasswordValidator.validate(request.getPassword());
 
     User user = new User();
     user.setFirstName(request.getFirstName());
     user.setLastName(request.getLastName());
     user.setEmail(request.getEmail());
+    // Encode password before saving to database
     user.setPassword(passwordEncoder.encode(request.getPassword()));
     user.setRole(Role.USER); // Default role for new users
     
     return userRepo.save(user);
-  }
-
-  private void validatePassword(String password) {
-    if (password == null || password.length() < 8) {
-      throw new IllegalArgumentException("Password must be at least 8 characters long");
-    }
-    
-    if (!password.matches(".*[A-Z].*")) {
-      throw new IllegalArgumentException("Password must contain at least one uppercase letter");
-    }
-    
-    if (!password.matches(".*[a-z].*")) {
-      throw new IllegalArgumentException("Password must contain at least one lowercase letter");
-    }
-    
-    if (!password.matches(".*\\d.*")) {
-      throw new IllegalArgumentException("Password must contain at least one number");
-    }
-    
-    if (!password.matches(".*[@$!%*?&].*")) {
-      throw new IllegalArgumentException("Password must contain at least one special character (@$!%*?&)");
-    }
   }
 
   @Transactional(readOnly = true)
@@ -79,12 +59,12 @@ public class UserService {
 
   @Transactional(readOnly = true)
   public Optional<User> getVerifiedUserById(@NonNull UUID id) {
-    return userRepo.findByIdAndIsVerifiedIsNotNull(id);
+    return userRepo.findByIdAndVerifiedAtIsNotNull(id);
   }
 
   @Transactional(readOnly = true)
   public Optional<User> getVerifiedUserByEmail(@NonNull String email) {
-    return userRepo.findByEmailAndIsVerifiedIsNotNull(email);
+    return userRepo.findByEmailAndVerifiedAtIsNotNull(email);
   }
 
   /**
@@ -232,9 +212,6 @@ public class UserService {
     // Transfer ownership
     currentOwner.setRole(Role.ADMIN);
     newOwner.setRole(Role.OWNER);
-    
-    // Update organization owner reference
-    currentOwner.getOrganization().setOwner(newOwner);
     
     userRepo.save(currentOwner);
     userRepo.save(newOwner);

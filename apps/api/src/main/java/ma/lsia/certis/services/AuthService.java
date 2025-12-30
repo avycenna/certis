@@ -48,8 +48,9 @@ public class AuthService {
     // Update last login
     userService.updateLastLogin(userId);
 
-    // Generate JWT token with role
-    String token = jwtUtil.generateToken(user.getEmail(), userId, user.getRole());
+    // Generate JWT token with role and organizationId
+    UUID orgId = user.getOrganization() != null ? user.getOrganization().getId() : null;
+    String token = jwtUtil.generateToken(user.getEmail(), userId, user.getRole(), orgId);
 
     // Return response with token and user info
     return new AuthResponse(token, UserResponse.fromUser(user));
@@ -69,8 +70,9 @@ public class AuthService {
       User user = userService.getUserByEmail(email)
           .orElseThrow(() -> new BadCredentialsException("User not found"));
       
-      // Generate new JWT token with fresh expiration and current role
-      String newToken = jwtUtil.generateToken(user.getEmail(), userId, user.getRole());
+      // Generate new JWT token with fresh expiration, current role, and organizationId
+      UUID orgId = user.getOrganization() != null ? user.getOrganization().getId() : null;
+      String newToken = jwtUtil.generateToken(user.getEmail(), userId, user.getRole(), orgId);
       
       // Return response with new token and user info
       return new AuthResponse(newToken, UserResponse.fromUser(user));

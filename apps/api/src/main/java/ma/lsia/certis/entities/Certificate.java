@@ -3,10 +3,14 @@ package ma.lsia.certis.entities;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.data.annotation.CreatedBy;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -14,9 +18,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -32,9 +35,13 @@ import io.swagger.v3.oas.annotations.media.Schema;
 @Table(
   name = "certificates",
   indexes = {
-    @Index(name = "idx_cert_serial_number", columnList = "serialNumber")
+    @Index(name = "idx_cert_serial_number", columnList = "serialNumber"),
+    @Index(name = "idx_cert_org_id", columnList = "org_id"),
+    @Index(name = "idx_cert_issuer", columnList = "issuer_id"),
+    @Index(name = "idx_cert_created_by", columnList = "created_by")
   }
 )
+@EntityListeners(AuditingEntityListener.class)
 @Getter
 @Setter
 @NoArgsConstructor
@@ -58,7 +65,8 @@ public class Certificate {
   @Schema(description = "Reason for revocation, if revoked", example = "Violation of terms")
   private String revocationReason;
 
-  @ManyToOne(fetch = FetchType.LAZY)
+  @ManyToOne(fetch = FetchType.LAZY, optional = false)
+  @JoinColumn(name = "org_id", nullable = false)
   @NotNull
   @Schema(description = "Organization that issued the certificate")
   private Organization organization;
@@ -78,11 +86,9 @@ public class Certificate {
   @Schema(description = "Subject of the certificate", example = "Java Developer Certificate")
   private String subject;
 
-  @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
   @Schema(description = "Start date of certificate validity (ISO 8601 format)", example = "2025-01-01T00:00:00")
   private LocalDateTime activeFrom;
 
-  @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
   @Schema(description = "End date of certificate validity (ISO 8601 format)", example = "2025-12-31T23:59:59")
   private LocalDateTime activeTo;
 
@@ -90,30 +96,24 @@ public class Certificate {
   @Schema(description = "Additional metadata for the certificate (JSON string)", example = "{\"duration\":\"40h\",\"skills\":[\"Java\",\"OOP\"]}")
   private String metadata;
 
+  @CreatedBy
   @ManyToOne
   @JoinColumn(updatable = false)
   @Schema(description = "User who created the certificate record")
   private User createdBy;
 
-  @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+  @CreatedDate
   @Column(updatable = false)
   @Schema(description = "Date the certificate was created (ISO 8601 format)", example = "2025-01-01T00:00:00")
   private LocalDateTime createdAt;
 
-  @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+  @LastModifiedDate
   @Schema(description = "Date the certificate was last updated (ISO 8601 format)", example = "2025-06-01T12:00:00")
   private LocalDateTime updatedAt;
 
-  @PrePersist
-  protected void onCreate() {
-    this.createdAt = LocalDateTime.now();
-    this.updatedAt = LocalDateTime.now();
-  }
-
-  @PreUpdate
-  protected void onUpdate() {
-    this.updatedAt = LocalDateTime.now();
-  }
+  @Version
+  @Schema(description = "Version number for optimistic locking")
+  private Long version;
 
   @Override
   public boolean equals(Object o) {
@@ -142,3 +142,27 @@ public class Certificate {
       '}';
   }
 }
+
+
+
+/**
+ * interface Certificate {
+  recipientName: string
+  recipientEmail: string
+  courseName: string
+  courseCode: string
+  status: string
+  issueDate: string
+  completionDate: string
+  score?: number
+  certificateNumber: string
+  verificationUrl?: string
+  revokedAt?: string
+  revokeReason?: string
+
+  metadata?: {
+    duration?: string
+    skills?: string[]
+  }
+}
+ */

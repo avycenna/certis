@@ -3,10 +3,12 @@ package ma.lsia.certis.entities;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
@@ -16,7 +18,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -40,6 +41,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
     @Index(name = "idx_invitation_status", columnList = "status")
   }
 )
+@EntityListeners(AuditingEntityListener.class)
 @Getter
 @Setter
 @NoArgsConstructor
@@ -87,23 +89,16 @@ public class Invitation {
   private InvitationStatus status = InvitationStatus.PENDING;
 
   @NotNull
-  @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-  @Column(nullable = false)
   @Schema(description = "Expiration date and time of the invitation (ISO 8601 format)", example = "2025-12-31T23:59:59")
   private LocalDateTime expiresAt;
 
-  @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+  @CreatedDate
   @Column(updatable = false, nullable = false)
   @Schema(description = "Date and time the invitation was created (ISO 8601 format)", example = "2025-01-01T00:00:00")
   private LocalDateTime createdAt;
 
-  @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+  @Schema(description = "Date and time the invitation was accepted (ISO 8601 format)")
   private LocalDateTime acceptedAt;
-
-  @PrePersist
-  protected void onCreate() {
-    this.createdAt = LocalDateTime.now();
-  }
 
   public boolean isExpired() {
     return LocalDateTime.now().isAfter(expiresAt);

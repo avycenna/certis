@@ -16,7 +16,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 @Schema(description = "Request payload for user login")
 public class LoginRequest {
 
-  @Schema(description = "User's email address", example = "user@example.com")
+  @Schema(description = "User's email address", example = "john.doe@example.com")
   @NotBlank(message = "Email is required")
   @Email(message = "Email must be valid")
   private String email;

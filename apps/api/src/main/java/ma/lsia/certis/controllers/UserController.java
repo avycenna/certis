@@ -4,9 +4,9 @@ import java.util.UUID;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.lang.NonNull;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -20,6 +20,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import ma.lsia.certis.dto.UpdateUserRequest;
 import ma.lsia.certis.dto.UserResponse;
 import ma.lsia.certis.entities.User;
@@ -28,16 +29,12 @@ import ma.lsia.certis.services.UserService;
 import ma.lsia.certis.util.SecurityUtil;
 
 @RestController
-@RequestMapping("/users")
+@RequestMapping("/api/me")
 @Tag(name = "User Management", description = "User profile operations (requires authentication)")
 @SecurityRequirement(name = "bearerAuth")
+@RequiredArgsConstructor
 public class UserController {
-  
   private final UserService userService;
-
-  public UserController(UserService userService) {
-    this.userService = userService;
-  }
 
   /**
    * Get current user profile
@@ -49,7 +46,8 @@ public class UserController {
       content = @Content(schema = @Schema(implementation = UserResponse.class))),
     @ApiResponse(responseCode = "401", description = "Unauthorized - Invalid or missing JWT token")
   })
-  @GetMapping("/me")
+  @GetMapping
+  @PreAuthorize("isAuthenticated()")
   public ResponseEntity<UserResponse> getCurrentUser() {
     String userEmail = SecurityUtil.getCurrentUserEmail();
     if (userEmail == null) {
@@ -61,35 +59,6 @@ public class UserController {
     return ResponseEntity.ok(UserResponse.fromUser(user));
   }
 
-  /**
-   * Get user by ID (owner-only access)
-   * @param UUID id
-   * @return ResponseEntity<UserResponse>
-   */
-  @Operation(summary = "Get user by ID", description = "Retrieve user profile by ID (owner-only access)")
-  @ApiResponses(value = {
-    @ApiResponse(responseCode = "200", description = "User found",
-      content = @Content(schema = @Schema(implementation = UserResponse.class))),
-    @ApiResponse(responseCode = "401", description = "Unauthorized - Not the owner"),
-    @ApiResponse(responseCode = "404", description = "User not found")
-  })
-  @GetMapping("/{id}")
-  public ResponseEntity<UserResponse> getUserById(@PathVariable @NonNull UUID id) {
-    String currentUserEmail = SecurityUtil.getCurrentUserEmail();
-    if (currentUserEmail == null) {
-      throw new UnauthorizedException("User not authenticated");
-    }
-    
-    User user = userService.getUserById(id)
-        .orElseThrow(() -> new UnauthorizedException("User not found"));
-    
-    // Only allow users to view their own profile
-    if (!user.getEmail().equals(currentUserEmail)) {
-      throw new UnauthorizedException("You can only view your own profile");
-    }
-    
-    return ResponseEntity.ok(UserResponse.fromUser(user));
-  }
 
   /**
    * Update current user profile
@@ -103,7 +72,8 @@ public class UserController {
     @ApiResponse(responseCode = "400", description = "Invalid input"),
     @ApiResponse(responseCode = "401", description = "Unauthorized")
   })
-  @PutMapping("/me")
+  @PutMapping
+  @PreAuthorize("isAuthenticated()")
   public ResponseEntity<UserResponse> updateCurrentUser(@Valid @NonNull @RequestBody UpdateUserRequest request) {
     String userEmail = SecurityUtil.getCurrentUserEmail();
     if (userEmail == null) {
@@ -129,6 +99,7 @@ public class UserController {
     return ResponseEntity.ok(UserResponse.fromUser(updatedUser));
   }
 
+
   /**
    * Delete current user account
    * @return ResponseEntity<Void>
@@ -138,7 +109,8 @@ public class UserController {
     @ApiResponse(responseCode = "204", description = "Account deleted successfully"),
     @ApiResponse(responseCode = "401", description = "Unauthorized")
   })
-  @DeleteMapping("/me")
+  @DeleteMapping
+  @PreAuthorize("isAuthenticated()")
   public ResponseEntity<Void> deleteCurrentUser() {
     String userEmail = SecurityUtil.getCurrentUserEmail();
     if (userEmail == null) {

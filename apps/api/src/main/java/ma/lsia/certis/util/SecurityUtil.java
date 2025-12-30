@@ -15,18 +15,23 @@ public class SecurityUtil {
    * @return User of authenticated user, or null if not authenticated
    */
   public static User getCurrentUser() {
-    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    
-    if (authentication == null || !authentication.isAuthenticated()) {
+    try {
+      Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+      
+      if (authentication == null || !authentication.isAuthenticated()) {
+        return null;
+      }
+
+      Object principal = authentication.getPrincipal();
+      if (principal instanceof User) {
+        return (User) principal;
+      }
+      
+      return null;
+    } catch (Exception e) {
+      // No SecurityContext available (e.g., during startup)
       return null;
     }
-
-    Object principal = authentication.getPrincipal();
-    if (principal instanceof User) {
-      return (User) principal;
-    }
-    
-    return null;
   }
 
   /**
@@ -34,18 +39,23 @@ public class SecurityUtil {
    * @return email of authenticated user, or null if not authenticated
    */
   public static String getCurrentUserEmail() {
-    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    
-    if (authentication == null || !authentication.isAuthenticated()) {
+    try {
+      Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+      
+      if (authentication == null || !authentication.isAuthenticated()) {
+        return null;
+      }
+
+      Object principal = authentication.getPrincipal();
+      if (principal instanceof UserDetails) {
+        return ((UserDetails) principal).getUsername();
+      }
+      
+      return null;
+    } catch (Exception e) {
+      // No SecurityContext available
       return null;
     }
-
-    Object principal = authentication.getPrincipal();
-    if (principal instanceof UserDetails) {
-      return ((UserDetails) principal).getUsername();
-    }
-    
-    return null;
   }
 
   /**
@@ -53,7 +63,11 @@ public class SecurityUtil {
    * @return true if user is authenticated
    */
   public static boolean isAuthenticated() {
-    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    return authentication != null && authentication.isAuthenticated();
+    try {
+      Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+      return authentication != null && authentication.isAuthenticated();
+    } catch (Exception e) {
+      return false;
+    }
   }
 }

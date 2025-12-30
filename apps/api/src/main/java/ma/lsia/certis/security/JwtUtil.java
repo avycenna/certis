@@ -26,11 +26,12 @@ public class JwtUtil {
     return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
   }
 
-  public String generateToken(String email, UUID userId, Role role) {
+  public String generateToken(String email, UUID userId, Role role, UUID organizationId) {
     return Jwts.builder()
         .subject(email)
         .claim("userId", userId)
         .claim("role", role.name())
+        .claim("organizationId", organizationId)
         .issuedAt(new Date())
         .expiration(new Date(System.currentTimeMillis() + expiration))
         .signWith(getSigningKey())
@@ -48,6 +49,10 @@ public class JwtUtil {
   public Role extractRole(String token) {
     String roleName = extractClaim(token, claims -> claims.get("role", String.class));
     return roleName != null ? Role.valueOf(roleName) : Role.USER;
+  }
+
+  public UUID extractOrganizationId(String token) {
+    return extractClaim(token, claims -> claims.get("organizationId", UUID.class));
   }
 
   public Date extractExpiration(String token) {

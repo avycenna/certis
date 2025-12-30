@@ -51,11 +51,11 @@ public class OrganizationService {
     org.setName(request.getName());
     org.setDesc(request.getDescription());
     org.setDomain(request.getDomain());
-    org.setOwner(owner);
 
     org = orgRepo.save(org);
     
     // Update user's organization reference and set OWNER role
+    // This automatically makes the owner a member via the bidirectional relationship
     owner.setOrganization(org);
     owner.setRole(Role.OWNER);
     owner.setJoinedAt(LocalDateTime.now());
